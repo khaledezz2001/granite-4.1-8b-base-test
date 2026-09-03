@@ -746,6 +746,8 @@ if __name__ == '__main__':
     #  don't re-run initialization)
     # ===============================
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    if tokenizer.chat_template is None:
+        tokenizer.chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>' + '\\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\\n' }}{% endif %}"
 
     llm = LLM(
         model=MODEL_PATH,
