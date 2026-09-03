@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 # ===============================
 # MODEL CONFIG (loaded inside __main__ guard)
 # ===============================
-MODEL_PATH = "/app/models/granite-4.1-8b-instruct"
+MODEL_PATH = "/app/models/granite-4.1-8b"
 
 # These globals are set inside if __name__ == '__main__' before any
 # function is called.  Declared here so linters don't complain.
@@ -775,6 +775,6 @@ if __name__ == '__main__':
         repetition_penalty=1.1,
     )
 
-    print(f"[LOG] granite-4.1-8b-instruct loaded via vLLM", flush=True)
+    print(f"[LOG] granite-4.1-8b loaded via vLLM", flush=True)
 
     runpod.serverless.start({"handler": handler})
