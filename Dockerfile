@@ -14,21 +14,21 @@ COPY requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
 
 # ===============================
-# DOWNLOAD granite-4.1-8b-base
+# DOWNLOAD granite-4.1-8b-instruct
 # ===============================
 RUN python3 -u <<'EOF'
 from huggingface_hub import snapshot_download
 
-print("Downloading ibm-granite/granite-4.1-8b-base...", flush=True)
+print("Downloading ibm-granite/granite-4.1-8b-instruct...", flush=True)
 
 snapshot_download(
-    repo_id="ibm-granite/granite-4.1-8b-base",
-    local_dir="/app/models/granite-4.1-8b-base",
+    repo_id="ibm-granite/granite-4.1-8b-instruct",
+    local_dir="/app/models/granite-4.1-8b-instruct",
     local_dir_use_symlinks=False,
     resume_download=True
 )
 
-print("granite-4.1-8b-base download complete", flush=True)
+print("granite-4.1-8b-instruct download complete", flush=True)
 EOF
 
 WORKDIR /app

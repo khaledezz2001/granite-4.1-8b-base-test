@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 # ===============================
 # MODEL CONFIG (loaded inside __main__ guard)
 # ===============================
-MODEL_PATH = "/app/models/granite-4.1-8b-base"
+MODEL_PATH = "/app/models/granite-4.1-8b-instruct"
 
 # These globals are set inside if __name__ == '__main__' before any
 # function is called.  Declared here so linters don't complain.
@@ -417,7 +417,13 @@ def regex_backup_detection(full_text, existing_reg_ids=None):
     for match in re.finditer(iban_pattern, full_text):
         backup_ibans.append(match.group())
 
-    return backup_emails, backup_phones, backup_ibans
+    # Date pattern (e.g. 12/03/2024, 2024-03-12, 12.03.2024, 12-03-2024)
+    backup_dates = []
+    date_pattern = r'\b(?:\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{4}[/.-]\d{1,2}[/.-]\d{1,2})\b'
+    for match in re.finditer(date_pattern, full_text):
+        backup_dates.append(match.group())
+
+    return backup_emails, backup_phones, backup_ibans, backup_dates
 
 
 # ===============================
@@ -579,7 +585,7 @@ def anonymize_document(pages, system_prompt=None, user_prompt=None):
     full_text_lower = full_text.lower()
     all_persons = validate_entities(all_persons, full_text_lower, "persons")
     all_orgs = validate_entities(all_orgs, full_text_lower, "organizations")
-    all_dates = validate_entities(all_dates, full_text_lower, "dates")
+    # all_dates = validate_entities(all_dates, full_text_lower, "dates")
     all_addresses = validate_entities(all_addresses, full_text_lower, "addresses")
     all_phones = validate_entities(all_phones, full_text_lower, "phones")
     all_reg_ids = validate_entities(all_reg_ids, full_text_lower, "registration_ids")
@@ -595,7 +601,7 @@ def anonymize_document(pages, system_prompt=None, user_prompt=None):
           f"{len(all_passports)} passports, {len(custom_entities)} custom_entities", flush=True)
 
     # ---- REGEX BACKUP: catch patterns the LLM might have missed ----
-    backup_emails, backup_phones, backup_ibans = regex_backup_detection(
+    backup_emails, backup_phones, backup_ibans, backup_dates = regex_backup_detection(
         full_text, existing_reg_ids=all_reg_ids
     )
 
@@ -617,8 +623,14 @@ def anonymize_document(pages, system_prompt=None, user_prompt=None):
             all_bank_accounts.append(iban)
             existing_ibans_lower.add(iban.lower())
 
+    existing_dates_lower = {d.lower() for d in all_dates}
+    for date_str in backup_dates:
+        if date_str.lower() not in existing_dates_lower:
+            all_dates.append(date_str)
+            existing_dates_lower.add(date_str.lower())
+
     print(f"[LOG] After regex backup: {len(all_emails)} emails, "
-          f"{len(all_phones)} phones, {len(all_bank_accounts)} bank_accounts", flush=True)
+          f"{len(all_phones)} phones, {len(all_bank_accounts)} bank_accounts, {len(all_dates)} dates", flush=True)
 
     # Deduplicate all entity lists
     unique_persons = dedup_substrings(dedup_list(all_persons))
@@ -763,6 +775,6 @@ if __name__ == '__main__':
         repetition_penalty=1.1,
     )
 
-    print(f"[LOG] granite-4.1-8b-base loaded via vLLM", flush=True)
+    print(f"[LOG] granite-4.1-8b-instruct loaded via vLLM", flush=True)
 
     runpod.serverless.start({"handler": handler})
